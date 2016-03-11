@@ -11,6 +11,18 @@ KEY_SPACE = 65
 
 grid_size = 16
 
+def los(x1, y1, x2, y2):
+    cx = (x1+.5)*grid_size
+    cy = (y1+.5)*grid_size
+    #TODO
+
+def valid_coord(x, y):
+    return not (\
+                x < 0 or x > grid_width-2 or \
+                y < 0 or y > grid_height-1 or \
+                grid[x][y])
+                           
+
 class Ent():
     x = 1
     y = 1
@@ -111,6 +123,36 @@ class Box(Ent):
                     for pos in valid:
                         occupancy[pos[0]][pos[1]] += amount
                         #if amount > 0: print(occupancy[pos[0]][pos[1]])
+
+        for depth in range(0, 999):
+            if self.face == 'r' and self.x+depth > grid_width-2:
+                break
+            if self.face == 'l' and self.x-depth < 0:
+                break
+            if self.face == 'u' and self.y-depth < 0:
+                break
+            if self.face == 'd' and self.y+depth > grid_height-1:
+                break
+            
+            for lat in range(-depth, depth):
+                cx = 0
+                cy = 0
+                if self.face == 'r':
+                    cx = self.x+depth
+                    cy = self.y+lat
+                if self.face == 'l':
+                    cx = self.x-depth
+                    cy = self.y+lat
+                if self.face == 'u':
+                    cy = self.y-depth
+                    cx = self.x+lat
+                if self.face == 'd':
+                    cy = self.y+depth
+                    cx = self.x+lat
+
+                #print(str(cx) + " " + str(cy))
+                if valid_coord(cx, cy):
+                    
         
         key = [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]
         shuffle(key)
@@ -134,20 +176,20 @@ class Box(Ent):
 ents = [Dot(), Box()]
 grid_text = "\
 ##################################\n\
-#         #                      #\n\
-#                                #\n\
-#                                #\n\
-#                                #\n\
-#                                #\n\
-#                                #\n\
-#                                #\n\
-#                                #\n\
-#                                #\n\
-#                                #\n\
-#                                #\n\
-#                                #\n\
-#                                #\n\
-#                                #\n\
+#         #                #     #\n\
+#         #                #     #\n\
+#      ####   ######       #     #\n\
+#      #      #            #     #\n\
+#      #      #    #       #     #\n\
+#      ########    #             #\n\
+#         #        #             #\n\
+#         #    ###############   #\n\
+#   #######    #             #   #\n\
+#   #     #    #             #   #\n\
+#   #          #             #   #\n\
+#   #          #             #   #\n\
+#   ############             #   #\n\
+#                          ###   #\n\
 #                                #\n\
 #                                #\n\
 #                                #\n\
