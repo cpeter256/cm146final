@@ -14,6 +14,7 @@ grid_size = 16
 class Ent():
     x = 1
     y = 1
+    face = 'r'
     
     def draw(self, canvas):
         print("you didnt implement this yet dumbass")
@@ -22,8 +23,24 @@ class Ent():
         
 class Dot(Ent):
     def draw(self, canvas):
+        rads = 0
+        if self.face == 'r': rads = 0
+        if self.face == 'u': rads = pi/2
+        if self.face == 'l': rads = pi
+        if self.face == 'd': rads = 3*pi/2
+        canvas.create_line((self.x+.5)*grid_size,
+                           (self.y+.5)*grid_size,
+                           (self.x+.5)*grid_size+1000*cos(rads+pi/4),
+                           (self.y+.5)*grid_size-1000*sin(rads+pi/4),
+                           dash=(4, 4))
+        canvas.create_line((self.x+.5)*grid_size,
+                           (self.y+.5)*grid_size,
+                           (self.x+.5)*grid_size+1000*cos(rads-pi/4),
+                           (self.y+.5)*grid_size-1000*sin(rads-pi/4),
+                           dash=(4, 4))
         canvas.create_oval(self.x*grid_size, self.y*grid_size, (self.x+1)*grid_size, (self.y+1)*grid_size, fill = "red")
 
+                           
     def control(self, grid, key):
         next_x = self.x
         next_y = self.y
@@ -33,6 +50,10 @@ class Dot(Ent):
         if key == KEY_DOWN: next_y += 1
 
         if not grid[next_x][next_y]:
+            if next_x > self.x: self.face = 'r'
+            if next_x < self.x: self.face = 'l'
+            if next_y > self.y: self.face = 'd'
+            if next_y < self.y: self.face = 'u'
             self.x = next_x
             self.y = next_y
         
@@ -42,6 +63,19 @@ class Dot(Ent):
 occupancy = []
 class Box(Ent):
     def draw(self, canvas):
+        rads = 0
+        if self.face == 'r': rads = 0
+        if self.face == 'u': rads = pi/2
+        if self.face == 'l': rads = pi
+        if self.face == 'd': rads = 3*pi/2
+        canvas.create_line((self.x+.5)*grid_size,
+                           (self.y+.5)*grid_size,
+                           (self.x+.5)*grid_size+1000*cos(rads+pi/4),
+                           (self.y+.5)*grid_size-1000*sin(rads+pi/4))
+        canvas.create_line((self.x+.5)*grid_size,
+                           (self.y+.5)*grid_size,
+                           (self.x+.5)*grid_size+1000*cos(rads-pi/4),
+                           (self.y+.5)*grid_size-1000*sin(rads-pi/4))
         canvas.create_rectangle(self.x*grid_size, self.y*grid_size, (self.x+1)*grid_size, (self.y+1)*grid_size, fill = "blue")
         
         
@@ -89,6 +123,10 @@ class Box(Ent):
         if key == KEY_DOWN: next_y += 1
         
         if not grid[next_x][next_y]:
+            if next_x > self.x: self.face = 'r'
+            if next_x < self.x: self.face = 'l'
+            if next_y > self.y: self.face = 'd'
+            if next_y < self.y: self.face = 'u'
             self.x = next_x
             self.y = next_y
         
@@ -153,7 +191,7 @@ def gameFrame():
         for y in range(0, grid_height):
             alpha = occupancy[x][y]
             if alpha > 0:
-                alpha = max(0, min(1, alpha*1000))
+                alpha = max(.05, min(1, alpha*10))
 
             alpha = floor(alpha*255)
             tk_rgb = "#%02x%02x%02x" % (255, 255-alpha, 255-alpha)
