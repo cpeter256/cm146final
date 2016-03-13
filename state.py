@@ -103,6 +103,8 @@ class Ent():
         print("you didnt implement this yet dumbass")
     def control(self, state, key):
         print("not implemented")
+    def decide(self, state):
+        print("also not implemented yet")
         
 class Dot(Ent):
     def draw(self, state, canvas):
@@ -141,6 +143,11 @@ class Dot(Ent):
             self.y = next_y
         
         pass
+
+    def decide(self, state):
+        valid_moves = state.legal_moves(self)
+        shuffle(valid_moves)
+        return valid_moves[0]
 
 
 
@@ -249,9 +256,8 @@ class Box(Ent):
 
                 #TODO do the rest
                     
-        key = [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]
-        shuffle(key)
-        key = key[0]
+        #key = [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]
+        #shuffle(key)
         
         
         if key == KEY_LEFT: next_x -= 1
@@ -276,6 +282,20 @@ class Box(Ent):
                (self.face == 'd' and abs(dx) <= dy):
                 state.reset_occupancy()
                 state.occupancy[state.ents[0].x][state.ents[0].y] = 1
+
+    def decide(self, state):
+        valid_moves = state.legal_moves(self)
+        shuffle(valid_moves)
+        if los(self.x, self.y, state.ents[0].x, state.ents[0].y, state):
+            dx = state.ents[0].x-self.x
+            dy = state.ents[0].y-self.y
+            if (self.face == 'r' and abs(dy) <= dx) or \
+               (self.face == 'l' and abs(dy) <= -dx) or \
+               (self.face == 'u' and abs(dx) <= -dy) or \
+               (self.face == 'd' and abs(dx) <= dy):
+                state.reset_occupancy()
+                state.occupancy[state.ents[0].x][state.ents[0].y] = 1
+        return valid_moves[0]
 
 grid_text = "\
 ##################################\n\
@@ -304,6 +324,7 @@ class State:
     def __init__(self):
         self.turn = "player"
         self.ents = [Dot(), Box()]
+        self.player = 0
         self.occupancy = []
         self.grid = []
         for x in range(0, grid_width-1):
@@ -330,6 +351,7 @@ class State:
         temp = State()
         temp.turn = self.turn
         temp.ents = self.ents
+        temp.player = self.player
         temp.occupancy = []
         temp.grid = []
         for x in range(0, grid_width-1):
@@ -350,8 +372,9 @@ class State:
         inputs = ["Up", "Down", "Left", "Right"]
         if move not in inputs:
             move = "Stay"
-        if move in self.legal_moves(target):
-            target.control(self, move)
+        if move not in self.legal_moves(target):
+            move = "Stay"
+        target.control(self, move)
 
 
     def legal_moves(self, target):

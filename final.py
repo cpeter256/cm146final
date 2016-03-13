@@ -63,8 +63,15 @@ canvas.pack(side=RIGHT)
 
 
 def keyEvent(event):
-    for ent in game_state.ents:
-        game_state.apply_move(ent, event.keysym)
+    if game_state.player == 0:
+        game_state.apply_move(game_state.ents[0], event.keysym)
+        game_state.apply_move(game_state.ents[1], game_state.ents[1].decide(game_state))
+    elif game_state.player == 1:
+        game_state.apply_move(game_state.ents[1], event.keysym)
+        game_state.apply_move(game_state.ents[0], game_state.ents[0].decide(game_state))
+    else:
+        game_state.apply_move(game_state.ents[0], game_state.ents[0].decide(game_state))
+        game_state.apply_move(game_state.ents[1], game_state.ents[1].decide(game_state))
 
     #print(event.keysym)
     
