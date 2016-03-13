@@ -11,10 +11,82 @@ KEY_SPACE = 65
 
 grid_size = 16
 
-def los(x1, y1, x2, y2):
-    cx = (x1+.5)*grid_size
-    cy = (y1+.5)*grid_size
-    #TODO
+def distance(x1, y1, x2, y2):
+    return sqrt((x2-x1)**2 + (y2-y1)**2)
+
+
+def los(x1, y1, x2, y2, canvas = None):
+    cx = x1
+    cy = y1
+    dx = x2-x1
+    dy = y2-y1
+    dist = sqrt((x2-x1)**2 + (y2-y1)**2)
+
+    if dist == 0: return True
+
+    dx /= dist
+    dy /= dist
+
+    if dx == 0:
+        while cy != y2:
+            cy += dy
+            if grid[int(cx)][int(cy)]:
+                return False
+        return True
+    elif dy == 0:
+        while cx != x2:
+            cx += dx
+            if grid[int(cx)][int(cy)]:
+                return False
+        return True
+    else:
+        islope = dy/dx
+        slope = dx/dy
+
+        hdir = 1
+        if dx < 0: hdir = -1
+        vdir = 1
+        if dy < 0: vdir = -1
+
+        cx += .5
+        cy += .5
+
+        col = "blue"
+        
+        while distance(x1+.5, y1+.5, cx, cy) < dist:
+            hdist = 0
+            if hdir > 0:
+                hdist = floor(cx+1)-cx
+            else:
+                hdist = ceil(cx-1)-cx
+            hor = (cx+hdist, cy+hdist*islope)
+            vdist = 0
+            if vdir > 0:
+                vdist = floor(cy+1)-cy
+            else:
+                vdist = ceil(cy-1)-cy
+            ver = (cx+vdist*slope, cy+vdist)
+            nxt = ver
+            if distance(cx, cy, hor[0], hor[1]) < distance(cx, cy, ver[0], ver[1]):
+                nxt = hor
+            middle = ((cx+nxt[0])/2, (cy+nxt[1])/2)
+            coord = (int(floor(middle[0])), int(floor(middle[1])))
+
+            
+            if canvas != None:
+                canvas.create_line(cx*grid_size, cy*grid_size, nxt[0]*grid_size, nxt[1]*grid_size, fill=col)
+                if col == "blue":
+                    col = "yellow"
+                else:
+                    col = "blue"
+
+            if grid[coord[0]][coord[1]]:
+                return False
+
+            cx = nxt[0]
+            cy = nxt[1]
+        return True
+
 
 def valid_coord(x, y):
     return not (\
@@ -95,7 +167,7 @@ class Box(Ent):
         next_x = self.x
         next_y = self.y
 
-        if key == KEY_SPACE:
+        if key == KEY_SPACE: # or True:
             reset_occupancy()
             occupancy[ents[0].x][ents[0].y] = 1
             #print(occupancy)
@@ -124,6 +196,7 @@ class Box(Ent):
                         occupancy[pos[0]][pos[1]] += amount
                         #if amount > 0: print(occupancy[pos[0]][pos[1]])
 
+        consumed = 0
         for depth in range(0, 999):
             if self.face == 'r' and self.x+depth > grid_width-2:
                 break
@@ -134,7 +207,7 @@ class Box(Ent):
             if self.face == 'd' and self.y+depth > grid_height-1:
                 break
             
-            for lat in range(-depth, depth):
+            for lat in range(-depth, depth+1):
                 cx = 0
                 cy = 0
                 if self.face == 'r':
@@ -152,8 +225,19 @@ class Box(Ent):
 
                 #print(str(cx) + " " + str(cy))
                 if valid_coord(cx, cy):
+                    if los(self.x, self.y, cx, cy):
+                        consumed += occupancy[cx][cy]
+                        occupancy[cx][cy] = 0
+                        pass
+
+        total = 1-consumed
+        for x in range(0, grid_width-1):
+            for y in range(0, grid_height):
+                if total > 0:
+                    occupancy[x][y] /= total
+                else:
+                    occupancy[x][y] = 0
                     
-        
         key = [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]
         shuffle(key)
         key = key[0]
@@ -232,11 +316,19 @@ def gameFrame():
     for x in range(0, grid_width-1):
         for y in range(0, grid_height):
             alpha = occupancy[x][y]
-            if alpha > 0:
-                alpha = max(.05, min(1, alpha*10))
-
-            alpha = floor(alpha*255)
-            tk_rgb = "#%02x%02x%02x" % (255, 255-alpha, 255-alpha)
+            alpha *= 100
+            if alpha == 0:
+                tk_rgb = "#ffffff"
+            else:
+                if alpha > 5:
+                    alpha -= 5
+                    alpha *= 1/95
+                    alpha = floor(alpha*255)
+                    tk_rgb = "#%02x%02x%02x" % (alpha, 0, 255-alpha)
+                else:
+                    alpha *= 1/5
+                    alpha = floor(alpha*255)
+                    tk_rgb = "#%02x%02x%02x" % (255-alpha, 255-alpha, 255)
             #print(tk_rgb)
             #print(alpha)
             canvas.create_rectangle(x*grid_size, y*grid_size, (x+1)*grid_size, (y+1)*grid_size, fill=tk_rgb, outline=tk_rgb)
@@ -271,8 +363,13 @@ def keyEvent(event):
     
     gameFrame()
     #print(event)
+def mouseEvent(event):
+    gx = int(floor(event.x/grid_size))
+    gy = int(floor(event.y/grid_size))
+    los(ents[0].x, ents[0].y, gx, gy, canvas)
 
 master.bind("<Key>", keyEvent)
+master.bind("<Button-1>", mouseEvent)
 gameFrame()
 
 #master.after(floor(1000/60), gameFrame)
