@@ -3,6 +3,9 @@ from random import *
 from tkinter import *
 from collections import namedtuple
 
+
+
+
 KEY_LEFT = 113
 KEY_RIGHT = 114
 KEY_UP = 111
