@@ -1,10 +1,12 @@
+from math import *
+from random import *
 from collections import namedtuple, Counter
 
-KEY_LEFT = 113
-KEY_RIGHT = 114
-KEY_UP = 111
-KEY_DOWN = 116
-KEY_SPACE = 65    
+KEY_LEFT = "Left"
+KEY_RIGHT = "Right"
+KEY_UP = "Up"
+KEY_DOWN = "Down"
+KEY_SPACE = "space"
 
 grid_size = 16
 
@@ -141,7 +143,7 @@ class Dot(Ent):
         pass
 
 
-occupancy = []
+
 class Box(Ent):
     def draw(self, state, canvas):
         rads = 0
@@ -164,9 +166,9 @@ class Box(Ent):
         next_x = self.x
         next_y = self.y
 
-        if key == KEY_SPACE: # or True:
-            reset_occupancy()
-            state.occupancy[ents[0].x][ents[0].y] = 1
+        if False: # key == KEY_SPACE: # or True:
+            state.reset_occupancy()
+            state.occupancy[state.ents[0].x][state.ents[0].y] = 1
             #print(occupancy)
         else: 
             prev = []
@@ -222,7 +224,7 @@ class Box(Ent):
 
                 #print(str(cx) + " " + str(cy))
                 if valid_coord(cx, cy, state):
-                    if los(self.x, self.y, cx, cy):
+                    if los(self.x, self.y, cx, cy, state):
                         consumed += state.occupancy[cx][cy]
                         state.occupancy[cx][cy] = 0
                         pass
@@ -235,7 +237,7 @@ class Box(Ent):
                 else:
                     state.occupancy[x][y] = 0
 
-        if los(self.x, self.y, state.ents[0].x, state.ents[0].y):
+        if los(self.x, self.y, state.ents[0].x, state.ents[0].y, state):
             dx = state.ents[0].x-self.x
             dy = state.ents[0].y-self.y
             if (self.face == 'r' and abs(dy) <= dx) or \
@@ -243,7 +245,7 @@ class Box(Ent):
                (self.face == 'u' and abs(dx) <= -dy) or \
                (self.face == 'd' and abs(dx) <= dy):
                 state.reset_occupancy()
-                state.occupancy[ents[0].x][ents[0].y] = 1
+                state.occupancy[state.ents[0].x][state.ents[0].y] = 1
 
                 #TODO do the rest
                     
@@ -257,7 +259,7 @@ class Box(Ent):
         if key == KEY_UP: next_y -= 1
         if key == KEY_DOWN: next_y += 1
         
-        if not grid[next_x][next_y]:
+        if not state.grid[next_x][next_y]:
             if next_x > self.x: self.face = 'r'
             if next_x < self.x: self.face = 'l'
             if next_y > self.y: self.face = 'd'
@@ -265,18 +267,16 @@ class Box(Ent):
             self.x = next_x
             self.y = next_y
 
-        if los(self.x, self.y, ents[0].x, ents[0].y):
-            dx = ents[0].x-self.x
-            dy = ents[0].y-self.y
+        if los(self.x, self.y, state.ents[0].x, state.ents[0].y, state):
+            dx = state.ents[0].x-self.x
+            dy = state.ents[0].y-self.y
             if (self.face == 'r' and abs(dy) <= dx) or \
                (self.face == 'l' and abs(dy) <= -dx) or \
                (self.face == 'u' and abs(dx) <= -dy) or \
                (self.face == 'd' and abs(dx) <= dy):
-                reset_occupancy()
-                occupancy[ents[0].x][ents[0].y] = 1
+                state.reset_occupancy()
+                state.occupancy[state.ents[0].x][state.ents[0].y] = 1
 
-
-ents = [Dot(), Box()]
 grid_text = "\
 ##################################\n\
 #         #                #     #\n\
@@ -299,38 +299,79 @@ grid_text = "\
 ##################################\n"
 grid_width = grid_text.index("\n")+1
 grid_height = floor(len(grid_text)/grid_width)
-grid = []
-for x in range(0, grid_width-1):
-    grid.append([])
-    for y in range(0, grid_height):
-        is_wall = False
-        if grid_text[y*grid_width + x] == '#':
-            is_wall = True
-        grid[x].append(is_wall)
-
-
-for x in range(0, grid_width-1):
-    occupancy.append([])
-    for y in range(0, grid_height):
-        occupancy[x].append(0)
-def reset_occupancy():
-    for x in range(0, grid_width-1):
-        for y in range(0, grid_height):
-            occupancy[x][y] = 0
-reset_occupancy()
-
 
 class State:
     def __init__(self):
         self.turn = "player"
-        
+        self.ents = [Dot(), Box()]
+        self.occupancy = []
+        self.grid = []
+        for x in range(0, grid_width-1):
+            self.grid.append([])
+            for y in range(0, grid_height):
+                is_wall = False
+                if grid_text[y*grid_width + x] == '#':
+                    is_wall = True
+                self.grid[x].append(is_wall)
+
+        for x in range(0, grid_width-1):
+            self.occupancy.append([])
+            for y in range(0, grid_height):
+                self.occupancy[x].append(0)
+        self.reset_occupancy()
+
+    def reset_occupancy(self):
+        for x in range(0, grid_width-1):
+            for y in range(0, grid_height):
+                self.occupancy[x][y] = 0
+
+
     def copy(self):
+        temp = State()
+        temp.turn = self.turn
+        temp.ents = self.ents
+        temp.occupancy = []
+        temp.grid = []
+        for x in range(0, grid_width-1):
+            self.grid.append([])
+            for y in range(0, grid_height):
+                is_wall = False
+                if grid_text[y*grid_width + x] == '#':
+                    is_wall = True
+                self.grid[x].append(is_wall)
+        for x in range(0, grid_width-1):
+            temp.occupancy.append([])
+            for y in range(0, grid_height):
+                temp.occupancy[x].append(self.occupancy[x][y])
 
+        return temp
         
-    def apply_move(self, move):
+    def apply_move(self, target, move):
+        inputs = ["Up", "Down", "Left", "Right"]
+        if move not in inputs:
+            move = "Stay"
+        if move in self.legal_moves(target):
+            target.control(self, move)
 
-    @property
-    def legal_moves(self):
-    
-        return None
+
+    def legal_moves(self, target):
+        x = target.x
+        y = target.y
+        positions = [(x, y), (x+1, y), (x-1, y), (x, y+1), (x, y-1)]
+        valid = []
+        valid.append("Stay")
+        for pos in positions:
+            if not (\
+                pos[0] < 0 or pos[0] > grid_width-2 or \
+                pos[1] < 0 or pos[1] > grid_height-1 or \
+                self.grid[pos[0]][pos[1]]):
+                if pos == (x+1, y):
+                    valid.append("Right")
+                elif pos == (x-1, y):
+                    valid.append("Left")
+                elif pos == (x, y+1):
+                    valid.append("Down")
+                elif pos == (x, y-1):
+                    valid.append("Up")
+        return valid
 
