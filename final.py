@@ -237,6 +237,18 @@ class Box(Ent):
                     occupancy[x][y] /= total
                 else:
                     occupancy[x][y] = 0
+
+        if los(self.x, self.y, ents[0].x, ents[0].y):
+            dx = ents[0].x-self.x
+            dy = ents[0].y-self.y
+            if (self.face == 'r' and abs(dy) <= dx) or \
+               (self.face == 'l' and abs(dy) <= -dx) or \
+               (self.face == 'u' and abs(dx) <= -dy) or \
+               (self.face == 'd' and abs(dx) <= dy):
+                reset_occupancy()
+                occupancy[ents[0].x][ents[0].y] = 1
+
+
                     
         key = [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]
         shuffle(key)
@@ -255,7 +267,17 @@ class Box(Ent):
             if next_y < self.y: self.face = 'u'
             self.x = next_x
             self.y = next_y
-        
+
+        if los(self.x, self.y, ents[0].x, ents[0].y):
+            dx = ents[0].x-self.x
+            dy = ents[0].y-self.y
+            if (self.face == 'r' and abs(dy) <= dx) or \
+               (self.face == 'l' and abs(dy) <= -dx) or \
+               (self.face == 'u' and abs(dx) <= -dy) or \
+               (self.face == 'd' and abs(dx) <= dy):
+                reset_occupancy()
+                occupancy[ents[0].x][ents[0].y] = 1
+
 
 ents = [Dot(), Box()]
 grid_text = "\
@@ -263,8 +285,8 @@ grid_text = "\
 #         #                #     #\n\
 #         #                #     #\n\
 #      ####   ######       #     #\n\
-#      #      #            #     #\n\
-#      #      #    #       #     #\n\
+#             #            #     #\n\
+#             #    #       #     #\n\
 #      ########    #             #\n\
 #         #        #             #\n\
 #         #    ###############   #\n\
