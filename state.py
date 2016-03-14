@@ -344,7 +344,7 @@ class Box(Ent):
                (self.face == 'd' and abs(dx) <= dy):
                 state.reset_occupancy()
                 state.occupancy[state.ents[0].x][state.ents[0].y] = 1
-    kluge = 0
+
     def decide(self, state):
         if los(self.x, self.y, state.ents[0].x, state.ents[0].y, state):
             dx = state.ents[0].x-self.x
@@ -364,7 +364,7 @@ class Box(Ent):
         for i in range(0, len(valid_moves)):
             look_ahead_state = state.copy()
             look_ahead_state.apply_move(look_ahead_state.ents[1], valid_moves[i])
-            move_weights.append(max(0.001, look_ahead_state.ai_consumed-current_consumed))
+            move_weights.append(look_ahead_state.ai_consumed-current_consumed)
 
         most_prob = None
         most = -1
@@ -375,12 +375,7 @@ class Box(Ent):
                     if prob > most:
                         most = prob
                         most_prob = (x, y)
-
-        most_prob = (state.ents[0].x, state.ents[0].y)
-
-        self.kluge += 1
-        if self.kluge < 20:
-            return "Stay"
+                        
 
         cell = path_to(self.x, self.y, most_prob[0], most_prob[1], state.grid)
         path_act = "Stay"
@@ -394,8 +389,10 @@ class Box(Ent):
         if cell[1] > self.y: path_act = "Down"
         if cell[1] < self.y: path_act = "Up"
 
-        return path_act
-
+        
+        valid_moves.append(path_act)
+        move_weights.append(.1)
+        
         total_weight = 0
         for w in move_weights:
             total_weight += w
