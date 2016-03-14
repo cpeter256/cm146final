@@ -218,7 +218,7 @@ class Box(Ent):
                     for pos in valid:
                         state.occupancy[pos[0]][pos[1]] += amount
                         #if amount > 0: print(occupancy[pos[0]][pos[1]])
-
+        """
         consumed = 0
         for depth in range(0, 999):
             if self.face == 'r' and self.x+depth > grid_width-2:
@@ -261,7 +261,7 @@ class Box(Ent):
                     state.occupancy[x][y] /= total
                 else:
                     state.occupancy[x][y] = 0
-
+        """
         if los(self.x, self.y, state.ents[0].x, state.ents[0].y, state):
             dx = state.ents[0].x-self.x
             dy = state.ents[0].y-self.y
@@ -291,6 +291,50 @@ class Box(Ent):
             self.x = next_x
             self.y = next_y
 
+        consumed = 0
+        for depth in range(0, 999):
+            if self.face == 'r' and self.x+depth > grid_width-2:
+                break
+            if self.face == 'l' and self.x-depth < 0:
+                break
+            if self.face == 'u' and self.y-depth < 0:
+                break
+            if self.face == 'd' and self.y+depth > grid_height-1:
+                break
+
+            for lat in range(-depth, depth+1):
+                cx = 0
+                cy = 0
+                if self.face == 'r':
+                    cx = self.x+depth
+                    cy = self.y+lat
+                if self.face == 'l':
+                    cx = self.x-depth
+                    cy = self.y+lat
+                if self.face == 'u':
+                    cy = self.y-depth
+                    cx = self.x+lat
+                if self.face == 'd':
+                    cy = self.y+depth
+                    cx = self.x+lat
+
+                #print(str(cx) + " " + str(cy))
+                if valid_coord(cx, cy, state):
+                    if los(self.x, self.y, cx, cy, state):
+                        consumed += state.occupancy[cx][cy]
+                        state.occupancy[cx][cy] = 0
+                        pass
+
+        state.ai_consumed += consumed
+        total = 1-consumed
+        for x in range(0, grid_width-1):
+            for y in range(0, grid_height):
+                if total > 0:
+                    state.occupancy[x][y] /= total
+                else:
+                    state.occupancy[x][y] = 0
+
+
         if los(self.x, self.y, state.ents[0].x, state.ents[0].y, state):
             dx = state.ents[0].x-self.x
             dy = state.ents[0].y-self.y
@@ -311,9 +355,38 @@ class Box(Ent):
                (self.face == 'd' and abs(dx) <= dy):
                 state.reset_occupancy()
                 state.occupancy[state.ents[0].x][state.ents[0].y] = 1
+        valid_moves = state.legal_moves(self)
+        move_weights = []
+        #shuffle(valid_moves)
+        #return valid_moves[0]
+        current_consumed = state.ai_consumed
+        #print(valid_moves)
+        for i in range(0, len(valid_moves)):
+            look_ahead_state = state.copy()
+            look_ahead_state.apply_move(look_ahead_state.ents[1], valid_moves[i])
+            move_weights.append(max(0.001, look_ahead_state.ai_consumed-current_consumed))
 
-        state.turn = "ai"
-        return think(state.copy())
+        total_weight = 0
+        for w in move_weights:
+            total_weight += w
+        for i in range(0, len(move_weights)):
+            move_weights[i] /= total_weight
+
+
+        choice = random()
+        chosen_move = None
+        for i in range(0, len(move_weights)):
+            #print(move_weights)
+            if choice < move_weights[i]:
+                chosen_move = valid_moves[i]
+                break
+            else:
+                choice -= move_weights[i]
+        #print(chosen_move)
+        return chosen_move
+
+        #state.turn = "ai"
+        #return think(state.copy())
 
 grid_text = "\
 ##################################\n\
