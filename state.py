@@ -1,6 +1,7 @@
 from math import *
 from random import *
 from collections import namedtuple, Counter
+from mcts import think
 
 KEY_LEFT = "Left"
 KEY_RIGHT = "Right"
@@ -105,8 +106,17 @@ class Ent():
         print("not implemented")
     def decide(self, state):
         print("also not implemented yet")
+    def copy(self):
+        print("seein a pattern here, numbskull?")
         
 class Dot(Ent):
+    def copy(self):
+        temp = Dot()
+        temp.x = self.x
+        temp.y = self.y
+        temp.face = self.face
+        return temp
+        
     def draw(self, state, canvas):
         rads = 0
         if self.face == 'r': rads = 0
@@ -152,6 +162,13 @@ class Dot(Ent):
 
 
 class Box(Ent):
+    def copy(self):
+        temp = Box()
+        temp.x = self.x
+        temp.y = self.y
+        temp.face = self.face
+        return temp
+        
     def draw(self, state, canvas):
         rads = 0
         if self.face == 'r': rads = 0
@@ -236,6 +253,7 @@ class Box(Ent):
                         state.occupancy[cx][cy] = 0
                         pass
 
+        state.ai_consumed += consumed
         total = 1-consumed
         for x in range(0, grid_width-1):
             for y in range(0, grid_height):
@@ -284,8 +302,6 @@ class Box(Ent):
                 state.occupancy[state.ents[0].x][state.ents[0].y] = 1
 
     def decide(self, state):
-        valid_moves = state.legal_moves(self)
-        shuffle(valid_moves)
         if los(self.x, self.y, state.ents[0].x, state.ents[0].y, state):
             dx = state.ents[0].x-self.x
             dy = state.ents[0].y-self.y
@@ -295,7 +311,9 @@ class Box(Ent):
                (self.face == 'd' and abs(dx) <= dy):
                 state.reset_occupancy()
                 state.occupancy[state.ents[0].x][state.ents[0].y] = 1
-        return valid_moves[0]
+
+        state.turn = "ai"
+        return think(state.copy())
 
 grid_text = "\
 ##################################\n\
@@ -327,6 +345,7 @@ class State:
         self.player = 0
         self.occupancy = []
         self.grid = []
+        self.ai_consumed = 0
         for x in range(0, grid_width-1):
             self.grid.append([])
             for y in range(0, grid_height):
@@ -350,17 +369,20 @@ class State:
     def copy(self):
         temp = State()
         temp.turn = self.turn
-        temp.ents = self.ents
+        temp.ents = []
+        temp.ents.append(self.ents[0].copy())
+        temp.ents.append(self.ents[1].copy())
         temp.player = self.player
         temp.occupancy = []
         temp.grid = []
+        temp.ai_consumed = self.ai_consumed
         for x in range(0, grid_width-1):
-            self.grid.append([])
+            temp.grid.append([])
             for y in range(0, grid_height):
                 is_wall = False
                 if grid_text[y*grid_width + x] == '#':
                     is_wall = True
-                self.grid[x].append(is_wall)
+                temp.grid[x].append(is_wall)
         for x in range(0, grid_width-1):
             temp.occupancy.append([])
             for y in range(0, grid_height):
@@ -375,6 +397,10 @@ class State:
         if move not in self.legal_moves(target):
             move = "Stay"
         target.control(self, move)
+        if target == self.ents[0]:
+            self.turn = "ai"
+        else:
+            self.turn = "player"
 
 
     def legal_moves(self, target):
@@ -385,9 +411,9 @@ class State:
         valid.append("Stay")
         for pos in positions:
             if not (\
-                pos[0] < 0 or pos[0] > grid_width-2 or \
-                pos[1] < 0 or pos[1] > grid_height-1 or \
-                self.grid[pos[0]][pos[1]]):
+                    pos[0] < 0 or pos[0] > grid_width-2 or \
+                    pos[1] < 0 or pos[1] > grid_height-1 or \
+                    self.grid[pos[0]][pos[1]]):
                 if pos == (x+1, y):
                     valid.append("Right")
                 elif pos == (x-1, y):

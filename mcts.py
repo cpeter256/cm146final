@@ -2,6 +2,7 @@ from mcts_node import MCTSNode
 from random import choice
 from math import sqrt, log
 from time import clock
+from state import *
 
 
 num_nodes = 1000
@@ -19,6 +20,10 @@ def traverse_nodes(node, state, identity):
 
     """
 
+    target = state.ents[0]
+    if state.turn == "ai":
+        target = state.ents[1]
+    
     if len(node.untried_actions) > 0:
         return node
 
@@ -37,7 +42,7 @@ def traverse_nodes(node, state, identity):
             max_value = value
 
     #max_child.visits += 1
-    state.apply_move(max_child.parent_action)
+    state.apply_move(target, max_child.parent_action)
     return traverse_nodes(max_child, state, identity)
     # Hint: return leaf_node
 
@@ -53,6 +58,10 @@ def expand_leaf(node, state):
 
     """
 
+    target = state.ents[0]
+    if state.turn == "ai":
+        target = state.ents[1]
+    
     # return current node if the game is already over
     #if state.is_terminal():
     #    return node
@@ -62,8 +71,8 @@ def expand_leaf(node, state):
 
     node.untried_actions.remove(action)
     
-    state.apply_move(action)
-    node.child_nodes[action] = MCTSNode(parent=node, parent_action=action, action_list=state.legal_moves)
+    state.apply_move(target, action)
+    node.child_nodes[action] = MCTSNode(parent=node, parent_action=action, action_list=state.legal_moves(target))
 
     #node.child_nodes[action].visits += 1
     return node.child_nodes[action]
@@ -78,11 +87,16 @@ def rollout(state):
 
     """
 
+    target = state.ents[0]
+    if state.turn == "ai":
+        target = state.ents[1]
+    
+    
     depth = 10 #TODO this isnt nearly enough
     
     while depth > 0:
         # shitty random rollout
-        state.apply_move(choice(state.legal_moves))
+        state.apply_move(target, choice(state.legal_moves(target)))
         depth -= 1
         
     return state.ai_consumed
@@ -105,7 +119,7 @@ def backpropagate(node, consumed):
     node.consumed += consumed
     node.visits += 1
 
-    backpropagate(node.parent, won)
+    backpropagate(node.parent, consumed)
     
     pass
 
@@ -120,11 +134,18 @@ def think(state):
 
     """
     identity = state.turn
-    root_node = MCTSNode(parent=None, parent_action=None, action_list=state.legal_moves)
+    target = state.ents[0]
+    if identity == "ai":
+        target = state.ents[1]
+    
+    root_node = MCTSNode(parent=None, parent_action=None, action_list=state.legal_moves(target))
 
     start_time = clock()
-    for step in range(num_nodes):
-    #while clock() < start_time+think_time:
+    think_time = 1.0
+    iters = 0
+    #for step in range(num_nodes):
+    while clock() < start_time+think_time:
+        iters += 1
         # Copy the game for sampling a playthrough
         sampled_game = state.copy()
 
@@ -133,7 +154,7 @@ def think(state):
 
         # Do MCTS - This is all you!
     
-        leaf = traverse_nodes(node, sampled_game, identity_of_bot)
+        leaf = traverse_nodes(node, sampled_game, identity)
         #print("Selected leaf: ", leaf)
 
         new_leaf = expand_leaf(leaf, sampled_game)
@@ -157,5 +178,6 @@ def think(state):
             best_rate = node_rate
             best_node = node
 
+    print("explored ", iters, " iterations")
     print("MCTSBot picking ", best_node.parent_action, " with consumption rate ", best_rate)
     return best_node.parent_action

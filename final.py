@@ -26,13 +26,14 @@ def gameFrame(state):
             if alpha == 0:
                 tk_rgb = "#ffffff"
             else:
-                if alpha > 5:
-                    alpha -= 5
-                    alpha *= 1/95
+                if alpha > 1:
+                    alpha -= 1
+                    alpha *= 1/99
+                    alpha = min(1, alpha*60)
                     alpha = floor(alpha*255)
                     tk_rgb = "#%02x%02x%02x" % (alpha, 0, 255-alpha)
                 else:
-                    alpha *= 1/5
+                    alpha *= 1
                     alpha = floor(alpha*255)
                     tk_rgb = "#%02x%02x%02x" % (255-alpha, 255-alpha, 255)
             #print(tk_rgb)
