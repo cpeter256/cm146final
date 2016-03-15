@@ -506,6 +506,18 @@ class State:
                 is_wall = False
                 if grid_text[y*grid_width + x] == '#':
                     is_wall = True
+                if grid_text[y*grid_width + x] == 'A':
+                    temp.grid_waypoint_a = (x,y)
+                if grid_text[y*grid_width + x] == 'B':
+                    temp.grid_waypoint_b = (x,y)
+                if grid_text[y*grid_width + x] == 'C':
+                    temp.grid_waypoint_c = (x,y)
+                if grid_text[y*grid_width + x] == 'D':
+                    temp.grid_waypoint_d = (x,y)
+                if grid_text[y*grid_width + x] == 'E':
+                    temp.grid_waypoint_e = (x,y)
+                if grid_text[y*grid_width + x] == 'F':
+                    temp.grid_waypoint_f = (x,y)
                 temp.grid[x].append(is_wall)
         for x in range(0, grid_width-1):
             temp.occupancy.append([])
