@@ -459,6 +459,7 @@ class State:
             for y in range(0, grid_height):
                 self.occupancy[x].append(0)
         self.reset_occupancy()
+        self.occupancy[self.ents[0].x][self.ents[0].y] = 1
 
     def reset_occupancy(self):
         for x in range(0, grid_width-1):
