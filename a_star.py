@@ -1,7 +1,7 @@
 from heapq import heappop, heappush
 from math import sqrt
 
-def path_to(start_x, start_y, target_x, target_y, grid):
+def path_to(start_x, start_y, target_x, target_y, grid, avoid=False, los=None, state = None):
     initial_position = (start_x, start_y)
     destination = (target_x, target_y)
     
@@ -19,8 +19,9 @@ def path_to(start_x, start_y, target_x, target_y, grid):
         current_distance = distances[current_node]
         
         # Early termination check: if the destination is found, return the path
-        if current_node == destination:
-            node = destination
+        if ((not avoid) and (current_node == destination)) or \
+           (avoid and not los(current_node[0], current_node[1], destination[0], destination[1], state)):
+            node = current_node
             path = []
             while node is not None:
                 path.append(node)
@@ -35,7 +36,10 @@ def path_to(start_x, start_y, target_x, target_y, grid):
                 # Assign new distance and update link to previous cell
                 distances[adjacent_node] = new_distance
                 previous_cell[adjacent_node] = current_node
-                heappush(queue, (new_distance+sqrt(((adjacent_node[0]-target_x)**2) + ((adjacent_node[1]-target_y)**2)), adjacent_node))
+                heuristic = 0
+                if not avoid:
+                    heuristic = sqrt(((adjacent_node[0]-target_x)**2) + ((adjacent_node[1]-target_y)**2))
+                heappush(queue, (new_distance+heuristic, adjacent_node))
                     
     # Failed to find a path
     print("Failed to find a path from", initial_position, "to", destination)

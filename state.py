@@ -162,6 +162,8 @@ class Dot(Ent):
 
 
 class Box(Ent):
+    waypoint = None
+    
     def copy(self):
         temp = Box()
         temp.x = self.x
@@ -355,6 +357,28 @@ class Box(Ent):
                (self.face == 'd' and abs(dx) <= dy):
                 state.reset_occupancy()
                 state.occupancy[state.ents[0].x][state.ents[0].y] = 1
+                self.waypoint = path_to(self.x, self.y, state.ents[0].x, state.ents[0].y, state.grid, avoid=True, los=los, state=state)
+                self.waypoint = self.waypoint[::-1][0]
+
+        if self.waypoint != None:
+            if self.x == self.waypoint[0] and self.y == self.waypoint[1]:
+                self.waypoint = None
+            else:
+                cell = path_to(self.x, self.y, self.waypoint[0], self.waypoint[1], state.grid)
+                path_act = "Stay"
+                if len(cell) > 1:
+                    cell = cell[1]
+                else:
+                    cell = cell[0]
+                #print(cell)
+                if cell[0] > self.x: path_act = "Right"
+                if cell[0] < self.x: path_act = "Left"
+                if cell[1] > self.y: path_act = "Down"
+                if cell[1] < self.y: path_act = "Up"
+                return path_act
+
+            
+
         valid_moves = state.legal_moves(self)
         move_weights = []
         #shuffle(valid_moves)
@@ -391,7 +415,7 @@ class Box(Ent):
 
         
         valid_moves.append(path_act)
-        move_weights.append(.1)
+        move_weights.append(.01)
         
         total_weight = 0
         for w in move_weights:

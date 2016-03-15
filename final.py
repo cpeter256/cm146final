@@ -24,7 +24,7 @@ def gameFrame(state):
             alpha = state.occupancy[x][y]
             alpha *= 100
             if alpha == 0:
-                tk_rgb = "#ffffff"
+                tk_rgb = "#dddddd"
             else:
                 if alpha > 1:
                     alpha -= 1
