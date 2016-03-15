@@ -417,11 +417,11 @@ class Box(Ent):
 
 grid_text = "\
 ##################################\n\
-#         #                #     #\n\
-#         #                #     #\n\
+#A        #                #     #\n\
+#        C#                #     #\n\
 #      ####   ######       #     #\n\
-#             #            #     #\n\
-#             #    #       #     #\n\
+#             #            #F    #\n\
+#             #    #       ###   #\n\
 #      ########    #             #\n\
 #         #        #             #\n\
 #         #    ###############   #\n\
@@ -429,11 +429,11 @@ grid_text = "\
 #   #     #    #             #   #\n\
 #   #          #             #   #\n\
 #   #          #             #   #\n\
-#   ############             #   #\n\
-#                          ###   #\n\
+#   ############            E#   #\n\
+#         D               ####   #\n\
 #                                #\n\
 #                                #\n\
-#                                #\n\
+#                               B#\n\
 ##################################\n"
 grid_width = grid_text.index("\n")+1
 grid_height = floor(len(grid_text)/grid_width)
@@ -445,6 +445,13 @@ class State:
         self.player = 0
         self.occupancy = []
         self.grid = []
+        self.grid_waypoint_a = None
+        self.grid_waypoint_b = None
+        self.grid_waypoint_c = None
+        self.grid_waypoint_d = None
+        self.grid_waypoint_e = None
+        self.grid_waypoint_f = None
+
         self.ai_consumed = 0
         for x in range(0, grid_width-1):
             self.grid.append([])
@@ -452,7 +459,23 @@ class State:
                 is_wall = False
                 if grid_text[y*grid_width + x] == '#':
                     is_wall = True
+                if grid_text[y*grid_width + x] == 'A':
+                    self.grid_waypoint_a = (x,y)
+                if grid_text[y*grid_width + x] == 'B':
+                    self.grid_waypoint_b = (x,y)
+                if grid_text[y*grid_width + x] == 'C':
+                    self.grid_waypoint_c = (x,y)
+                if grid_text[y*grid_width + x] == 'D':
+                    self.grid_waypoint_d = (x,y)
+                if grid_text[y*grid_width + x] == 'E':
+                    self.grid_waypoint_e = (x,y)
+                if grid_text[y*grid_width + x] == 'F':
+                    self.grid_waypoint_f = (x,y)
                 self.grid[x].append(is_wall)
+        self.ents[0].x = self.grid_waypoint_b[0]
+        self.ents[0].y = self.grid_waypoint_b[1]
+        self.ents[1].x = self.grid_waypoint_a[0]
+        self.ents[1].y = self.grid_waypoint_a[1]
 
         for x in range(0, grid_width-1):
             self.occupancy.append([])
